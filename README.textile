@@ -1,4 +1,3 @@
-automate-em
-===========
+h1. automate-em
 
 A framework for building automation.
