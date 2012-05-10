@@ -19,9 +19,24 @@ h2. Creating a control project
 You now have a blank control project
 
 
-h2. Configuring
+h2. Generating module scaffolding
 
-TODO
+From a console
+
+# type: @rails g module module/scope/and_name@
+#* An example would be: @rails g module NEC/Projectors/NP2000@
+#* This will create a file at @app/modules/nec/projectors/np2000.rb@
+
+Note: The scope (@NEC/Projectors@ in the example above) is optional and can be as deep or shallow as makes sense.
+
+h2. Writing Modules
+
+Please see: [[writing modules]]
+
+
+h2. Database Configuration
+
+Please see: [[system configuration]]
 
 
 h2. Running
