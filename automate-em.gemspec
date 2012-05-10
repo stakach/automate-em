@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.summary     = "A framework for building automation."
   s.description = "A framework for building automation."
 
-  s.files = Dir["{app,config,db,lib}/**/*"] + ["LGPL3-LICENSE", "Rakefile", "README.rdoc"]
+  s.files = Dir["{app,config,db,lib}/**/*"] + ["LGPL3-LICENSE", "Rakefile", "README.textile"]
   s.test_files = Dir["test/**/*"]
 
   s.add_dependency "rails", ">= 3.2.0"
