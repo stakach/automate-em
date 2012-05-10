@@ -1,4 +1,4 @@
-
+require "automate-em/engine"
 
 #
 # TODO:: Use autoload here to avoid loading these unless control is running!
