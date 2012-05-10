@@ -26,17 +26,21 @@ From a console
 # type: @rails g module module/scope/and_name@
 #* An example would be: @rails g module NEC/Projectors/NP2000@
 #* This will create a file at @app/modules/nec/projectors/np2000.rb@
+# You will be asked what type of module you would like to generate
+#* Type: @device@ for a generic device module (a raw TCP or UDP protocol including telnet)
+#* Type: @service@ for any module that will be interfacing with a HTTP(S) service
+#* Type: @logic@ to generate a controller/interfacing module
 
 Note: The scope (@NEC/Projectors@ in the example above) is optional and can be as deep or shallow as makes sense.
 
 h2. Writing Modules
 
-Please see: [[writing modules]]
+Please see: "writing modules":https://github.com/stakach/automate-em/wiki/writing-modules
 
 
 h2. Database Configuration
 
-Please see: [[system configuration]]
+Please see: "system configuration":https://github.com/stakach/automate-em/wiki/system-configuration
 
 
 h2. Running
