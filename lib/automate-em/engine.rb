@@ -10,11 +10,11 @@ module AutomateEm
 		#
 		# Define the application configuration
 		#
-		config.before_initialize do |app|
-			app.config.automate = {			# Rails.configuration
-				:module_paths => [],
-				:log_level => Logger::INFO
-			}
+		config.before_initialize do |app|						# Rails.configuration
+			app.config.namespace :automate do |automate|
+				automate.module_paths = []
+				automate.log_level = Logger::INFO
+			end
 		end
 		
 		#
