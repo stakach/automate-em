@@ -4,7 +4,7 @@ module AutomateEm
 		
 		
 		rake_tasks do
-			load "tasks/automate-em_tasks.tasks"
+			load "tasks/automate-em_tasks.rake"
 		end
 		
 		#
