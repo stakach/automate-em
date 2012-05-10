@@ -1,3 +1,29 @@
 h1. automate-em
 
-A framework for building automation.
+A framework for building automation and control.
+
+
+h2. Creating a control project
+
+# Create a new rails project
+#* Configure your database etc
+# Add @gem "automate-em"@ to your gem file
+#* Also add @gem 'login', :git => 'git://github.com/stakach/advanced-authenticator.git'@
+#* This dependency will be removed soon to allow for any authentication system to be utilised
+# From a console type:
+## @bundle install@
+## @rake railties:install:migrations FROM=login_engine@
+## @rake railties:install:migrations FROM=automate@
+## @rake db:migrate@
+
+You now have a blank control project
+
+
+h2. Configuring
+
+TODO
+
+
+h2. Running
+
+From a command console type: @rake automate@
