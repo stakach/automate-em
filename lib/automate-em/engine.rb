@@ -1,5 +1,11 @@
 module AutomateEm
 	class Engine < ::Rails::Engine
+		engine_name :automate
+		
+		
+		rake_tasks do
+			load "tasks/automate-em_tasks.tasks"
+		end
 		
 		#
 		# Define the application configuration
