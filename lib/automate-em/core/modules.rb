@@ -12,17 +12,21 @@ module AutomateEm
 	
 		def self.load_module(dep)
 			@@load_lock.mon_synchronize {
-			
 				begin
-					if File.exists?(ROOT_DIR + '/modules/device/' + dep.filename)
-						load ROOT_DIR + '/modules/device/' + dep.filename
-					elsif File.exists?(ROOT_DIR + '/modules/service/' + dep.filename)
-						load ROOT_DIR + '/modules/service/' + dep.filename
-					elsif File.exists?(ROOT_DIR + '/modules/logic/' + dep.filename)
-						load ROOT_DIR + '/modules/logic/' + dep.filename
-					else
+					found = false
+					
+					Rails.configuration.automate.module_paths.each do |path|
+						if File.exists?("#{path}/#{dep.filename}")
+							load "#{path}/#{dep.filename}"
+							found = true
+							break
+						end
+					end
+					
+					if not found
 						raise "File not found!"
 					end
+					
 					@@modules[dep.id] = dep.classname.classify.constantize
 				rescue => e
 					AutomateEm.print_error(System.logger, e, {

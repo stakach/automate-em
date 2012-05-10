@@ -108,11 +108,7 @@ module AutomateEm
 		#	Dangerous (Could be used to add on the fly interfaces)
 		#
 		def self.force_load_file(path)
-			#
-			# TODO:: use load paths variable to search for files to reload
-			#
-			load path if File.exists?(path)
-			load Rails.root.join(path).to_s if File.exists?(Rails.root.join(path).to_s)
+			load path if File.exists?(path) && File.extname(path) == '.rb'
 		end
 		
 		

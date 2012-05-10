@@ -1,6 +1,10 @@
 
 
 #
+# TODO:: Use autoload here to avoid loading these unless control is running!
+#
+
+#
 # STD LIB
 #
 require 'observer'
@@ -82,26 +86,21 @@ module AutomateEm
 		end
 	end
 	
-	#
-	# Load the config file and start the modules
-	#
-	def self.set_log_level(level)
-		@logLevel = get_log_level(level)
+	
+	def self.boot
 		
 		#
 		# System level logger
 		#
 		if Rails.env.production?
-			System.logger = Logger.new(Rails.root.join('interface/log/system.log').to_s, 10, 4194304)
+			System.logger = Logger.new(Rails.root.join('log/system.log').to_s, 10, 4194304)
 		else
 			System.logger = Logger.new(STDOUT)
 		end
 		System.logger.formatter = proc { |severity, datetime, progname, msg|
 			"#{datetime.strftime("%d/%m/%Y @ %I:%M%p")} #{severity}: #{System} - #{msg}\n"
 		}
-	end
-	
-	def self.boot
+		
 		@@resolver = ResolverPool.new
 		
 		EventMachine.run do
@@ -127,7 +126,7 @@ module AutomateEm
 				EM.defer do
 					begin
 						System.logger.debug "Booting #{controller.name}"
-						System.new_system(controller, @logLevel)
+						System.new_system(controller, Rails.configuration.automate.log_level)
 					rescue => e
 						AutomateEm.print_error(AutomateEm::System.logger, e, {
 							:message => "Error during boot",

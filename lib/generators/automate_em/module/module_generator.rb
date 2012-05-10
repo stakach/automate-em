@@ -1,7 +1,7 @@
 class AutomateEm::ModuleGenerator < Rails::Generators::NamedBase
 	#source_root File.expand_path('../templates', __FILE__)
 	
-		def create_module_file
+	def create_module_file
 		
 		param = file_name
 		param = param.split(/\/|\\/)
