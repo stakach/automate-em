@@ -24,6 +24,8 @@ Gem::Specification.new do |s|
   s.add_dependency "ipaddress"
   s.add_dependency "em-websocket"
   s.add_dependency "atomic"
+  s.add_dependency "simple_oauth"
+  s.add_dependency "yajl-ruby"
 
   s.add_development_dependency "sqlite3"
 end
