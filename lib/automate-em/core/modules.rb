@@ -27,7 +27,7 @@ module AutomateEm
 						raise "File not found!"
 					end
 					
-					@@modules[dep.id] = dep.classname.classify.constantize
+					@@modules[dep.id] = dep.classname.constantize
 				rescue => e
 					AutomateEm.print_error(System.logger, e, {
 						:message => "device module #{dep.actual_name} error whilst loading",
