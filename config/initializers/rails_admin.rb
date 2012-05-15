@@ -1,3 +1,4 @@
+if RailsAdmin.present?
 RailsAdmin.config do |config|
 
 	config.current_user_method { current_rake db:migrate } #auto-generated
@@ -426,4 +427,5 @@ RailsAdmin.config do |config|
 		field :online
 		field :notes
 	end
-end unless RailsAdmin.nil?
+end
+end
