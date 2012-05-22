@@ -14,10 +14,11 @@ module AutomateEm
 			@@load_lock.mon_synchronize {
 				begin
 					found = false
+					file = "#{dep.classname.underscore}.rb"
 					
 					Rails.configuration.automate.module_paths.each do |path|
-						if File.exists?("#{path}/#{dep.filename}")
-							load "#{path}/#{dep.filename}"
+						if File.exists?("#{path}/#{file}")
+							load "#{path}/#{file}"
 							found = true
 							break
 						end
