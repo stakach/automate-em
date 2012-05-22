@@ -19,7 +19,7 @@ class Setting < ActiveRecord::Base
 		if self[:text_value].blank?
 			self[:text_value] = ""
 		else
-			self[:text_value] = Encryptor.decrypt(Base64.decode64(self[:text_value]), {:key => CONTROL_CONFIG[:encrypt_key], :algorithm => 'aes-256-cbc'})
+			self[:text_value] = Encryptor.decrypt(Base64.decode64(self[:text_value]), {:key => Rails.application.config.automate.encrypt_key, :algorithm => 'aes-256-cbc'})
 		end
 	end
 	
@@ -29,7 +29,7 @@ class Setting < ActiveRecord::Base
 		if self[:text_value].blank?
 			self[:text_value] = ""
 		else
-			self[:text_value] = Base64.encode64(Encryptor.encrypt(self[:text_value], {:key => CONTROL_CONFIG[:encrypt_key], :algorithm => 'aes-256-cbc'}))
+			self[:text_value] = Base64.encode64(Encryptor.encrypt(self[:text_value], {:key => Rails.application.config.automate.encrypt_key, :algorithm => 'aes-256-cbc'}))
 		end
 	end
 	
