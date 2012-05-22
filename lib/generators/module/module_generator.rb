@@ -12,12 +12,12 @@ class ModuleGenerator < Rails::Generators::NamedBase
 		scope = []
 		text = ""
 		param.map! {|item|
-			item = item.classify
+			item = item.camelcase
 			scope << item
 			text += "module #{scope.join('::')}; end\n"
 			item
 		}
-		param << name.classify
+		param << name.camelcase
 		scope = param.join('::')
 		
 		
@@ -27,7 +27,7 @@ class ModuleGenerator < Rails::Generators::NamedBase
 			text += <<-FILE
 
 
-class #{scope} < AutomateEm::#{type.downcase.classify}
+class #{scope} < AutomateEm::#{type.downcase.camelcase}
 	def on_load
 	end
 	
