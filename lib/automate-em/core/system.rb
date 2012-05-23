@@ -190,7 +190,7 @@ module AutomateEm
 				if !@controller.active || force
 					if @logger.nil?
 						if Rails.env.production?
-							@logger = Logger.new(Rails.root.join('log/system_#{@controller.id}.log').to_s, 10, 4194304)
+							@logger = Logger.new(Rails.root.join("log/system_#{@controller.id}.log").to_s, 10, 4194304)
 						else
 							@logger = Logger.new(STDOUT)
 						end
