@@ -117,12 +117,15 @@ module AutomateEm
 				#
 				# Instance of a user module
 				#
-				@instance = Modules[controllerDevice.dependency_id].new(controllerDevice.tls, controllerDevice.makebreak)
-				@instance.join_system(@system)
-				@@instances[@device] = @instance
-				@@devices[baselookup] = @instance
-				@@lookup[@instance] = [@device]
-				@@lookup_lock.unlock	#UNLOCK!! so we can lookup settings in on_load
+				begin
+					@instance = Modules[controllerDevice.dependency_id].new(controllerDevice.tls, controllerDevice.makebreak)
+					@instance.join_system(@system)
+					@@instances[@device] = @instance
+					@@devices[baselookup] = @instance
+					@@lookup[@instance] = [@device]
+				ensure
+					@@lookup_lock.unlock	#UNLOCK!! so we can lookup settings in on_load
+				end
 				
 				devBase = nil
 				
@@ -180,13 +183,16 @@ module AutomateEm
 				#
 				# add parent may lock at this point!
 				#
-				@instance = @@devices[baselookup]
-				@@lookup[@instance] << @device
-				@@instances[@device] = @instance
-				EM.defer do
-					@instance.join_system(@system)
+				begin
+					@instance = @@devices[baselookup]
+					@@lookup[@instance] << @device
+					@@instances[@device] = @instance
+					EM.defer do
+						@instance.join_system(@system)
+					end
+				ensure
+					@@lookup_lock.unlock	#UNLOCK!!
 				end
-				@@lookup_lock.unlock	#UNLOCK!!
 			end
 		end
 	end
