@@ -25,7 +25,7 @@ module AutomateEm
 					end
 					
 					if not found
-						raise "File not found!"
+						raise "File not found! (#{file})"
 					end
 					
 					@@modules[dep.id] = dep.classname.constantize
