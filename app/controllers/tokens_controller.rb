@@ -62,7 +62,8 @@ class TokensController < ActionController::Base
 		sys = user.control_systems.where('control_systems.id = ?', params[:system]).first unless user.nil?
 		if user.present? && sys.present?
 
-			dev = TrustedDevice.new(params[:trusted_device])
+			dev = TrustedDevice.new
+			dev.reason = params[:trusted_device][:reason]
 			dev.user = user
 			dev.control_system = sys
 			dev.save
