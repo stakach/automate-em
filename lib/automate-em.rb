@@ -126,13 +126,13 @@ module AutomateEm
 				EM.defer do
 					begin
 						System.logger.debug "Booting #{controller.name}"
-						result = System.new_system(controller, Rails.configuration.automate.log_level)
+						result = System.start(controller, Rails.configuration.automate.log_level)
 						if result == false
 							#
 							# TODO:: we need a class for handling failed starts
 							#
 							@@scheduler.in '5m' do
-								System.new_system(controller, Rails.configuration.automate.log_level)
+								System.start(controller, Rails.configuration.automate.log_level)
 							end
 						end
 					rescue => e
