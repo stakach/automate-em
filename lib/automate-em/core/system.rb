@@ -1,16 +1,24 @@
 module AutomateEm
 	class System
-
-		@@systems = {:'---GOD---' => self}		# system_name => system instance
-		@@controllers = {}						# controller_id => system instance
+		@@controllers = {0 => self}						# controller_id => system instance	(0 is the system class)
 		@@logger = nil
-		@@communicator = AutomateEm::Communicator.new(self)
+		@@communicator = AutomateEm::Communicator.new(self)	# TODO:: remove the need for communicator.start
 		@@communicator.start(true)
 		@@god_lock = Mutex.new
 		
 		
-		def self.new_system(controller, log_level = Logger::INFO)
+		
+		#
+		# Error thrown means: mark as offline, do not retry and email
+		# Return false means: retry and email if a second attempt fails
+		# Return true means: all is good! system running
+		#
+		def self.start(controller, log_level = Logger::INFO)
 			begin
+				
+				#
+				# Ensure we are dealing with a controller
+				#
 				if controller.class == Fixnum
 					controller = ControlSystem.find(controller)
 				elsif controller.class == String
@@ -20,50 +28,106 @@ module AutomateEm
 				if controller.class != ControlSystem
 					raise 'invalid controller identifier'
 				end
-			
-				@@god_lock.lock
-				if @@controllers[controller.id].nil?
-					@@god_lock.unlock
-					sys = System.new(controller, log_level)
-					if controller.active
-						begin
-							sys.start(true)			# as this is loading the first time we ignore controller active
-						rescue => e
-							AutomateEm.print_error(@@logger, e, {
-								:message => "Error starting system in new_system, stopping..",
-								:level => Logger::ERROR
-							})
-							begin
-								sys.stop
-								EM.schedule do
-									EM.add_timer(60) do # Attempt a single restart
-										EM.defer do
-											begin
-												sys.start(true)
-											rescue => e
-												begin
-													AutomateEm.print_error(@@logger, e, {
-														:message => "Second start attempt failed..",
-														:level => Logger::ERROR
-													})
-													sys.stop
-												rescue
-												end
-											end
-										end
-									end
-								end
-							rescue => e
-								AutomateEm.print_error(@@logger, e, {
-									:message => "Error stopping system after problems starting..",
-									:level => Logger::ERROR
-								})
-							end
-						end
+				
+				
+				#
+				# Check if the system is already loaded or loading
+				#
+				@@god_lock.synchronize {
+					if @@controllers[controller.id].present?
+						return true
 					end
-				else
-					@@god_lock.unlock
+					
+					begin
+						@controller.reload(:lock => true)
+						if @controller.active
+							return true
+						else
+							@controller.active = true
+						end
+					ensure
+						@controller.save
+					end
+				}
+				
+				#
+				# Create the system
+				#
+				system = System.new(controller, log_level)
+				
+				#
+				# Load modules here (Producer)
+				#
+				proceed = Atomic.new(true)
+				queue = Queue.new
+				producer = Thread.new do	# New thread here to prevent circular waits on the thread pool
+					begin
+						controller.devices.includes(:dependency).each do |device|
+							theClass = Modules.lazy_load(device.dependency)
+							raise "Load Error" if theClass == false
+							queue.push([device, theClass])
+						end
+						
+						controller.services.includes(:dependency).each do |service|
+							theClass = Modules.lazy_load(service.dependency)
+							raise "Load Error" if theClass == false
+							queue.push([service, theClass])
+						end
+						
+						controller.logics.includes(:dependency).each do |logic|
+							theClass = Modules.lazy_load(logic.dependency)
+							raise "Load Error" if theClass == false
+							queue.push([logic, theClass])
+						end
+					rescue
+						proceed.value = false
+					ensure
+						ActiveRecord::Base.clear_active_connections!	# Clear any unused connections
+						queue.push(:done)
+					end
 				end
+				
+				#
+				# Consume the newly loaded modules here (Consumer)
+				#
+				mod = queue.pop
+				while mod.is_a?(Array) && proceed.value == true
+					begin
+						system.load(*mod)
+						
+						mod = queue.pop
+					rescue => e
+						AutomateEm.print_error(@@logger, e, {
+							:message => "Error stopping system after problems starting..",
+							:level => Logger::ERROR
+						})
+						
+						proceed.value = false
+					end
+				end
+				
+				
+				#
+				# Check if system modules loaded properly
+				#
+				if proceed.value == false
+					#
+					# Unload any loaded modules
+					#
+					system.stop
+					
+					return false
+				end
+				
+				
+				#
+				# Setup the systems link
+				#
+				@@god_lock.synchronize {
+					@@controllers[@controller.id] = system
+				}
+				system.start	# Start the systems communicator
+				return true
 			ensure
 				ActiveRecord::Base.clear_active_connections!	# Clear any unused connections
 			end
@@ -72,7 +136,7 @@ module AutomateEm
 		
 		#
 		# Reloads a dependency live
-		#	This is the re-load code function (live bug fixing - removing functions does not work)
+		#	This is the re-load code function (live bug fixing - removing / adding / modifying functions)
 		#
 		def self.reload(dep)
 			System.logger.info "reloading dependency: #{dep}"
@@ -84,6 +148,16 @@ module AutomateEm
 			dep.devices.select('id').each do |dev|
 				begin
 					inst = DeviceModule.instance_of(dev.id)
+					inst.on_update if (!!!updated[inst]) && inst.respond_to?(:on_update)
+				ensure
+					updated[inst] = true
+				end
+			end
+			
+			updated = {}
+			dep.services.select('id').each do |ser|
+				begin
+					inst = ServiceModule.instance_of(ser.id)
 					inst.on_update if (!!!updated[inst]) && inst.respond_to?(:on_update)
 				ensure
 					updated[inst] = true
@@ -109,6 +183,11 @@ module AutomateEm
 		#
 		def self.force_load_file(path)
 			load path if File.exists?(path) && File.extname(path) == '.rb'
+		rescue LoadError => e	# load error explicitly handled
+			AutomateEm.print_error(System.logger, e, {
+				:message => "force load of #{path} failed",
+				:level => Logger::ERROR
+			})
 		end
 		
 		
@@ -123,22 +202,17 @@ module AutomateEm
 			@@logger = log
 		end
 		
-		#def self.controllers
-		#	@@controllers
-		#end
-	
-		#def self.systems
-		#	@@systems
-		#end
-		
 		def self.communicator
 			@@communicator
 		end
 		
 		def self.[] (system)
-			system = system.to_sym if system.class == String
+			if system.is_a?(Symbol) || system.is_a?(String)
+				system = ControlSystem.where('name = ?', system.to_s).pluck(:id).first
+			end
+			
 			@@god_lock.synchronize {
-				@@systems[system]
+				@@controllers[system]
 			}
 		end
 		
@@ -174,49 +248,24 @@ module AutomateEm
 		attr_accessor :logger
 		
 		
+		#
+		# Loads a module into a system
+		#
+		def load(dbSetting, theClass)
+			if dbSetting.is_a?(ControllerDevice)
+				load_hooks(ddbSetting, DeviceModule.new(self, dbSetting, theClass))
+			elsif dbSetting.is_a?(ControllerHttpService)
+				load_hooks(ddbSetting, ServiceModule.new(self, dbSetting, theClass))
+			else # ControllerLogic
+				load_hooks(ddbSetting, LogicModule.new(self, dbSetting, theClass))
+			end
+		end
 		
 		#
-		# Starts the control system if not running
+		# The system is ready to go
 		#
-		def start(force = false)
-			System.logger.info "starting #{@controller.name}"
-			@sys_lock.synchronize {
-				@@god_lock.synchronize {
-					@@systems.delete(@controller.name.to_sym)
-					@controller.reload #(:lock => true)
-					@@systems[@controller.name.to_sym] = self
-				}
-				
-				if !@controller.active || force
-					if @logger.nil?
-						if Rails.env.production?
-							@logger = Logger.new(Rails.root.join("log/system_#{@controller.id}.log").to_s, 10, 4194304)
-						else
-							@logger = Logger.new(STDOUT)
-						end
-						@logger.formatter = proc { |severity, datetime, progname, msg|
-							"#{datetime.strftime("%d/%m/%Y @ %I:%M%p")} #{severity}: #{@controller.name} - #{msg}\n"
-						}
-					end
-					
-					@controller.devices.includes(:dependency).each do |device|
-						load_hooks(device, DeviceModule.new(self, device))
-					end
-					
-					@controller.services.includes(:dependency).each do |service|
-						load_hooks(service, ServiceModule.new(self, service))
-					end
-				
-					@controller.logics.includes(:dependency).each do |logic|
-						load_hooks(logic, LogicModule.new(self, logic))
-					end
-				end
-				
-				@controller.active = true
-				@controller.save
-				
-				@communicator.start
-			}
+		def start
+			@communicator.start
 		end
 		
 		#
@@ -226,29 +275,31 @@ module AutomateEm
 		def stop
 			System.logger.info "stopping #{@controller.name}"
 			@sys_lock.synchronize {
-				stop_nolock
-			}
-		end
-		
-		#
-		# Unload and then destroy self
-		#
-		def delete
-			System.logger.info "deleting #{@controller.name}"
-			@sys_lock.synchronize {
-				stop_nolock
+				if @controller.active
+					@communicator.shutdown
+					modules_unloaded = {}
+					@modules.each_value do |mod|
+						
+						if modules_unloaded[mod] == nil
+							modules_unloaded[mod] = :unloaded
+							mod.unload
+						end
+						
+					end
+					@modules = {}	# Modules no longer referenced. Cleanup time!
+					@logger.close if Rails.env.production?
+					@logger = nil
+				end
 				
 				@@god_lock.synchronize {
-					@@systems.delete(@controller.name.to_sym)
 					@@controllers.delete(@controller.id)
+					begin
+						@controller.reload(:lock => true)
+						@controller.active = false
+					ensure
+						@controller.save
+					end
 				}
-				
-				begin
-					@controller.destroy!
-				rescue
-					# Controller may already be deleted
-				end
-				@modules = nil
 			}
 		end
 		
@@ -267,43 +318,6 @@ module AutomateEm
 		
 	
 		protected
-		
-		
-		def stop_nolock
-			
-			begin
-				@@god_lock.synchronize {
-					@@systems.delete(@controller.name.to_sym)
-					@controller.reload(:lock => true)
-					@@systems[@controller.name.to_sym] = self
-				}
-			rescue
-				# Assume controller may have been deleted
-			end
-			
-			if @controller.active
-				@communicator.shutdown
-				modules_unloaded = {}
-				@modules.each_value do |mod|
-					
-					if modules_unloaded[mod] == nil
-						modules_unloaded[mod] = :unloaded
-						mod.unload
-					end
-					
-				end
-				@modules = {}	# Modules no longer referenced. Cleanup time!
-				@logger.close if Rails.env.production?
-				@logger = nil
-			end
-			
-			@controller.active = false
-			begin
-				@controller.save
-			rescue
-				# Assume controller may have been deleted
-			end
-		end
 	
 	
 		def load_hooks(device, mod)
@@ -315,27 +329,29 @@ module AutomateEm
 			#	The first module of a type has two names (display and display_1 for example)
 			#	Load order is controlled by the control_system model based on the ordinal
 			#
-			if not @modules[module_name.to_sym].nil?
-				while @modules["#{module_name}_#{count}".to_sym].present?
-					count += 1
+			@sys_lock.synchronize {
+				if not @modules[module_name.to_sym].nil?
+					while @modules["#{module_name}_#{count}".to_sym].present?
+						count += 1
+					end
+					module_name = "#{module_name}_#{count}"
+				else
+					@modules["#{module_name}_1".to_sym] = mod
 				end
-				module_name = "#{module_name}_#{count}"
-			else
-				@modules["#{module_name}_1".to_sym] = mod
-			end
-			@modules[module_name.to_sym] = mod
-			
-			#
-			# Allow for system specific custom names
-			#
-			if !device.custom_name.nil?
-				@modules[device.custom_name.to_sym] = mod
-			end
+				@modules[module_name.to_sym] = mod
+				
+				#
+				# Allow for system specific custom names
+				#
+				if !device.custom_name.nil?
+					@modules[device.custom_name.to_sym] = mod
+				end
+			}
 		end
 		
 		
 		def initialize(controller, log_level)
-			
+			System.logger.info "starting #{controller.name}"
 			
 			@modules = {}	# controller modules	:name => module instance (device or logic)
 			@communicator = AutomateEm::Communicator.new(self)
@@ -344,12 +360,13 @@ module AutomateEm
 			@sys_lock = Mutex.new
 			
 			
-			#
-			# Setup the systems links
-			#
-			@@god_lock.synchronize {
-				@@systems[@controller.name.to_sym] = self	# it may not be started
-				@@controllers[@controller.id] = self
+			if Rails.env.production?
+				@logger = Logger.new(Rails.root.join("log/system_#{@controller.id}.log").to_s, 10, 4194304)
+			else
+				@logger = Logger.new(STDOUT)
+			end
+			@logger.formatter = proc { |severity, datetime, progname, msg|
+				"#{datetime.strftime("%d/%m/%Y @ %I:%M%p")} #{severity}: #{@controller.name} - #{msg}\n"
 			}
 		end
 	end

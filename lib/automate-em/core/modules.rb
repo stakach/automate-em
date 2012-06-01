@@ -1,42 +1,57 @@
 module AutomateEm
 	class Modules
 		@@modules = {}	# modules (dependency_id => module class)
-		@@load_lock = Object.new.extend(MonitorMixin) #Mutex.new
-		@@loading = nil
+		@@load_lock = Mutex.new
 	
 		def self.[] (dep_id)
-			@@load_lock.mon_synchronize {
+			@@load_lock.synchronize {
 				@@modules[dep_id]
 			}
 		end
+		
+		def self.lazy_load(dep)
+			theClass = Modules[dep.id]
+			theClass = Modules.load_module(dep) if theClass.nil?
+			theClass
+		end
 	
 		def self.load_module(dep)
-			@@load_lock.mon_synchronize {
-				begin
-					found = false
-					file = "#{dep.classname.underscore}.rb"
-					
-					Rails.configuration.automate.module_paths.each do |path|
-						if File.exists?("#{path}/#{file}")
+			begin
+				found = false
+				file = "#{dep.classname.underscore}.rb"
+				
+				Rails.configuration.automate.module_paths.each do |path|
+					if File.exists?("#{path}/#{file}")
+						@@load_lock.synchronize {
 							load "#{path}/#{file}"
-							found = true
-							break
-						end
+						}
+						found = true
+						break
 					end
-					
-					if not found
-						raise "File not found! (#{file})"
-					end
-					
-					@@modules[dep.id] = dep.classname.constantize
-				rescue => e
-					AutomateEm.print_error(System.logger, e, {
-						:message => "device module #{dep.actual_name} error whilst loading",
-						:level => Logger::ERROR
-					})
 				end
-			
-			}
+				
+				if not found
+					raise "File not found! (#{file})"
+				end
+				
+				@@load_lock.synchronize {
+					@@modules[dep.id] = dep.classname.constantize	# this is the return value
+				}
+			rescue LoadError => e	# load error explicitly handled
+				AutomateEm.print_error(System.logger, e, {
+					:message => "device module #{dep.actual_name} error whilst loading",
+					:level => Logger::ERROR
+				})
+				
+				return false
+			rescue => e
+				AutomateEm.print_error(System.logger, e, {
+					:message => "device module #{dep.actual_name} error.",
+					:level => Logger::ERROR
+				})
+				
+				return false
+			end
 		end
 	end
 
@@ -51,7 +66,7 @@ module AutomateEm
 		@@lookup = {}		# @instance => db id array
 		@@lookup_lock = Mutex.new
 		
-		def initialize(system, controllerDevice)
+		def initialize(system, controllerDevice, theModule)
 			@@lookup_lock.synchronize {
 				if @@instances[controllerDevice.id].nil?
 					@system = system
@@ -59,7 +74,7 @@ module AutomateEm
 					@@dbentry[controllerDevice.id] = controllerDevice
 				end
 			}
-			instantiate_module(controllerDevice)
+			instantiate_module(controllerDevice, theModule)
 		end
 		
 		
@@ -103,12 +118,7 @@ module AutomateEm
 		protected
 	
 	
-		def instantiate_module(controllerDevice)
-			if Modules[controllerDevice.dependency_id].nil?
-				Modules.load_module(controllerDevice.dependency)		# This is the re-load code function (live bug fixing - removing functions does not work)
-			end
-			
-			
+		def instantiate_module(controllerDevice, theModule)
 			baselookup = "#{controllerDevice.ip}:#{controllerDevice.port}:#{controllerDevice.udp}"
 			
 			@@lookup_lock.lock
@@ -118,7 +128,7 @@ module AutomateEm
 				# Instance of a user module
 				#
 				begin
-					@instance = Modules[controllerDevice.dependency_id].new(controllerDevice.tls, controllerDevice.makebreak)
+					@instance = theModule.new(controllerDevice.tls, controllerDevice.makebreak)
 					@instance.join_system(@system)
 					@@instances[@device] = @instance
 					@@devices[baselookup] = @instance
@@ -205,7 +215,7 @@ module AutomateEm
 		@@lookup = {}		# @instance => db id array
 		@@lookup_lock = Mutex.new
 		
-		def initialize(system, controllerService)
+		def initialize(system, controllerService, theModule)
 			@@lookup_lock.synchronize {
 				if @@instances[controllerService.id].nil?
 					@system = system
@@ -213,7 +223,7 @@ module AutomateEm
 					@@dbentry[controllerService.id] = controllerService
 				end
 			}
-			instantiate_module(controllerService)
+			instantiate_module(controllerService, theModule)
 		end
 		
 		
@@ -253,23 +263,21 @@ module AutomateEm
 		protected
 	
 	
-		def instantiate_module(controllerService)
-			if Modules[controllerService.dependency_id].nil?
-				Modules.load_module(controllerService.dependency)		# This is the re-load code function (live bug fixing - removing functions does not work)
-			end
-			
+		def instantiate_module(controllerService, theModule)			
 			@@lookup_lock.lock
 			if @@services[controllerService.uri].nil?
-				
-				#
-				# Instance of a user module
-				#
-				@instance = Modules[controllerService.dependency_id].new
-				@instance.join_system(@system)
-				@@instances[@service] = @instance
-				@@services[controllerService.uri] = @instance
-				@@lookup[@instance] = [@service]
-				@@lookup_lock.unlock #UNLOCK
+				begin
+					#
+					# Instance of a user module
+					#
+					@instance = theModule.new
+					@instance.join_system(@system)
+					@@instances[@service] = @instance
+					@@services[controllerService.uri] = @instance
+					@@lookup[@instance] = [@service]
+				ensure
+					@@lookup_lock.unlock #UNLOCK
+				end
 				
 				HttpService.new(@instance, controllerService)
 				
@@ -308,10 +316,10 @@ module AutomateEm
 		@@lookup_lock = Mutex.new
 		
 
-		def initialize(system, controllerLogic)
+		def initialize(system, controllerLogic, theModule)
 			@@lookup_lock.synchronize {
 				if @@instances[controllerLogic.id].nil?
-					instantiate_module(controllerLogic, system)
+					instantiate_module(controllerLogic, system, theModule)
 				end
 			}
 			if @instance.respond_to?(:on_load)
@@ -368,11 +376,8 @@ module AutomateEm
 		protected
 
 
-		def instantiate_module(controllerLogic, system)
-			if Modules[controllerLogic.dependency_id].nil?
-				Modules.load_module(controllerLogic.dependency)		# This is the re-load code function (live bug fixing - removing functions does not work)
-			end
-			@instance = Modules[controllerLogic.dependency_id].new(system)
+		def instantiate_module(controllerLogic, system, theModule)
+			@instance = theModule.new(system)
 			@@instances[controllerLogic.id] = @instance
 			@@lookup[@instance] = controllerLogic
 		end

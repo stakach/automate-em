@@ -56,7 +56,7 @@ class Communicator
 		
 		if user.class == User
 			user.control_systems.select('control_systems.id, control_systems.name').each do |controller|
-				if !!System[controller.name.to_sym]
+				if !!System[controller.id]
 					response[:ids] << controller.id
 					response[:names] << controller.name
 				end
