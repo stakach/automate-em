@@ -39,14 +39,14 @@ module AutomateEm
 					end
 					
 					begin
-						@controller.reload(:lock => true)
-						if @controller.active
+						controller.reload(:lock => true)
+						if controller.active
 							return true
 						else
-							@controller.active = true
+							controller.active = true
 						end
 					ensure
-						@controller.save
+						controller.save
 					end
 				}
 				
@@ -124,7 +124,7 @@ module AutomateEm
 				# Setup the systems link
 				#
 				@@god_lock.synchronize {
-					@@controllers[@controller.id] = system
+					@@controllers[controller.id] = system
 				}
 				system.start	# Start the systems communicator
 				return true
