@@ -75,10 +75,10 @@ class Communicator
 		else
 			sys = nil
 			
-			if user.class == User
+			if user.is_a? User
 				sys = user.control_systems.select('control_systems.id').where('control_systems.id = ? AND control_systems.active = ?', system.to_i, true).first
 				
-			elsif user.class == TrustedDevice && user.control_system_id == system.to_i
+			elsif user.is_a?(TrustedDevice) && user.control_system_id == system.to_i
 				sys = User.find(user.user_id).control_systems.select('control_systems.id, control_systems.active').where('control_systems.id = ?', system.to_i).first
 				if sys.nil?
 					#

@@ -19,13 +19,13 @@ module AutomateEm
 				#
 				# Ensure we are dealing with a controller
 				#
-				if controller.class == Fixnum
+				if controller.is_a? Fixnum
 					controller = ControlSystem.find(controller)
-				elsif controller.class == String
+				elsif controller.is_a? String
 					controller = ControlSystem.where('name = ?', controller).first
 				end
 				
-				if controller.class != ControlSystem
+				if not controller.is_a? ControlSystem
 					raise 'invalid controller identifier'
 				end
 				
