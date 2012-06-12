@@ -56,10 +56,8 @@ class Communicator
 		
 		if user.class == User
 			user.control_systems.select('control_systems.id, control_systems.name').each do |controller|
-				if !!System[controller.id]
-					response[:ids] << controller.id
-					response[:names] << controller.name
-				end
+				response[:ids] << controller.id
+				response[:names] << controller.name
 			end 	# We ignore token requests here as they should know the system they can connect to
 		end
 		return response
@@ -78,10 +76,10 @@ class Communicator
 			sys = nil
 			
 			if user.class == User
-				sys = user.control_systems.select('control_systems.name').where('control_systems.id = ? AND control_systems.active = ?', system.to_i, true).first
+				sys = user.control_systems.select('control_systems.id').where('control_systems.id = ? AND control_systems.active = ?', system.to_i, true).first
 				
 			elsif user.class == TrustedDevice && user.control_system_id == system.to_i
-				sys = User.find(user.user_id).control_systems.select('control_systems.name, control_systems.active').where('control_systems.id = ?', system.to_i).first
+				sys = User.find(user.user_id).control_systems.select('control_systems.id, control_systems.active').where('control_systems.id = ?', system.to_i).first
 				if sys.nil?
 					#
 					# Kill comms, this key is not valid
@@ -99,7 +97,7 @@ class Communicator
 				end
 			end
 			
-			system = sys.nil? ? nil : sys.name.to_sym
+			system = sys.nil? ? nil : sys.id
 			if System[system].nil?
 				interface.shutdown	#kill comms
 				return nil
