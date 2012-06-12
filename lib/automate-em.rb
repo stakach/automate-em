@@ -122,7 +122,8 @@ module AutomateEm
 			#
 			# Load the system based on the database
 			#
-			ControlSystem.all.each do |controller|
+			ControlSystem.update_all(:active => false)
+			ControlSystem.find_each do |controller|
 				EM.defer do
 					begin
 						System.logger.debug "Booting #{controller.name}"
