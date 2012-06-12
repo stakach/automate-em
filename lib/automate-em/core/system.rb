@@ -253,11 +253,11 @@ module AutomateEm
 		#
 		def load(dbSetting, theClass)
 			if dbSetting.is_a?(ControllerDevice)
-				load_hooks(ddbSetting, DeviceModule.new(self, dbSetting, theClass))
+				load_hooks(dbSetting, DeviceModule.new(self, dbSetting, theClass))
 			elsif dbSetting.is_a?(ControllerHttpService)
-				load_hooks(ddbSetting, ServiceModule.new(self, dbSetting, theClass))
+				load_hooks(dbSetting, ServiceModule.new(self, dbSetting, theClass))
 			else # ControllerLogic
-				load_hooks(ddbSetting, LogicModule.new(self, dbSetting, theClass))
+				load_hooks(dbSetting, LogicModule.new(self, dbSetting, theClass))
 			end
 		end
 		
