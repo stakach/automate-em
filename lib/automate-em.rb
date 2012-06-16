@@ -32,6 +32,7 @@ require 'ipaddress'
 require 'automate-em/constants.rb'
 require 'automate-em/utilities.rb'
 require 'automate-em/status.rb'
+require 'automate-em/module_core.rb'
 
 require 'automate-em/core/resolver_pool.rb'
 require 'automate-em/core/modules.rb'

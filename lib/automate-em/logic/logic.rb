@@ -16,7 +16,7 @@ module AutomateEm
 			#	NOTE:: if changed then change in device.rb 
 			#
 			@status = {}
-			@status_lock = Mutex.new
+			@status_lock = Object.new.extend(MonitorMixin)
 			@status_emit = {}	# status => condition_variable
 		end
 		

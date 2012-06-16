@@ -11,7 +11,7 @@ module AutomateEm
 			#	NOTE:: if changed then change in logic.rb 
 			#
 			@status = {}
-			@status_lock = Mutex.new
+			@status_lock = Object.new.extend(MonitorMixin)
 			@system_lock = Mutex.new
 			@status_waiting = false
 		end

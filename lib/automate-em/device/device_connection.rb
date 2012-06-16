@@ -297,7 +297,7 @@ module AutomateEm
 		
 		
 		#
-		# Caled from recieve
+		# Called from receive
 		#
 		def process_response(response, command)
 			EM.defer do

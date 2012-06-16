@@ -4,11 +4,19 @@ module AutomateEm
 		include Observable
 
 
-		def [] (status)
+		def [] (status, &block)
 			status = status.to_sym if status.class == String
-			@status_lock.synchronize {
-				return @status[status]
-			}
+			if block.nil?
+				@status_lock.mon_synchronize {
+					return @status[status]
+				}
+			else
+				@status_lock.mon_synchronize {
+					newValue = block.call(@status[status].clone)
+					self[status] = newValue
+					return @status[status]
+				}
+			end
 		end
 		
 		def []= (status, data)
@@ -28,13 +36,13 @@ module AutomateEm
 		
 		
 		def mark_emit_start(status)
-			@status_lock.synchronize {
+			@status_lock.mon_synchronize {
 				@emit_hasnt_occured = status
 			}
 		end
 		
 		def mark_emit_end
-			@status_lock.synchronize {
+			@status_lock.mon_synchronize {
 				@emit_hasnt_occured.each_pair do | key, block |
 					data = @status[key]
 					task do
@@ -56,7 +64,7 @@ module AutomateEm
 		
 		
 		def check_for_emit(status, data)
-			@status_lock.synchronize {
+			@status_lock.mon_synchronize {
 				old_data = @status[status]
 				@status[status] = data
 				
