@@ -14,7 +14,7 @@ class Dependency < ActiveRecord::Base
 	protected
 	
 	
-	validates_presence_of :classname, :filename, :module_name, :actual_name
-	validates_uniqueness_of :filename
+	validates_presence_of :classname, :module_name, :actual_name
+	validates_uniqueness_of :classname
 	validates_uniqueness_of :actual_name
 end
