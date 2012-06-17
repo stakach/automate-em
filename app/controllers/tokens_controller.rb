@@ -85,7 +85,7 @@ class TokensController < ActionController::Base
 
 
 	def servers
-		render :json => Server.all
+		render :json => Server.where(:online => true).all
 	end
 
 
