@@ -51,9 +51,7 @@ module AutomateEm
 				if !@tls_enabled
 					@connected = true
 					@connecting = false
-					EM.defer do
-						call_connected
-					end
+					call_connected
 				else
 					if !@parent.respond_to?(:certificates)
 						start_tls
@@ -78,9 +76,7 @@ module AutomateEm
 			def ssl_handshake_completed
 				@connected = true
 				@connecting = false
-				EM.defer do
-					call_connected(get_peer_cert)		# this will mark the true connection complete stage for encrypted devices
-				end
+				call_connected(get_peer_cert)		# this will mark the true connection complete stage for encrypted devices
 			end
 			
 

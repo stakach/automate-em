@@ -155,9 +155,9 @@ module AutomateEm
 						end
 						
 						if controllerDevice.udp
-							
-							devBase.call_connected	# UDP is stateless (always connected)
-						
+							EM.schedule do
+								devBase.call_connected	# UDP is stateless (always connected)
+							end
 						end
 					end
 				}

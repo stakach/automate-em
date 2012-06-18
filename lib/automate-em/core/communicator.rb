@@ -276,7 +276,11 @@ class Communicator
 		
 		begin
 			@command_lock.synchronize {
-				@system.modules[mod].instance.public_send(command, *args)	# Not send string however call function command
+				if @system != System
+					@system.modules[mod].instance.public_send(command, *args)	# Not send string however call function command
+				else
+					@system.public_send(command, *args)
+				end
 			}
 		rescue => e
 			AutomateEm.print_error(logger, e, {

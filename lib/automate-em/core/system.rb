@@ -219,14 +219,8 @@ module AutomateEm
 		
 		
 		#
-		# For access via communicator as a super user
+		# For access via communicator
 		#
-		def self.modules
-			self
-		end
-		def self.instance
-			self
-		end
 		def instance
 			self
 		end
