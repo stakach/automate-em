@@ -123,14 +123,16 @@ module AutomateEm
 				#
 				# Setup the systems link
 				#
-				@@god_lock.synchronize {
-					@@controllers[controller.id] = system
-				}
 				system.start	# Start the systems communicator
 				return true
 			ensure
 				ActiveRecord::Base.clear_active_connections!	# Clear any unused connections
 			end
+		end
+		
+		
+		def self.stop(system)
+			System[system].stop
 		end
 		
 		
@@ -208,7 +210,12 @@ module AutomateEm
 		
 		def self.[] (system)
 			if system.is_a?(Symbol) || system.is_a?(String)
-				system = ControlSystem.where('name = ?', system.to_s).pluck(:id).first
+				id = ControlSystem.where('name = ?', system.to_s).pluck(:id).first
+				if id.nil? && system.is_a?(String)
+					system = system.to_i
+				else
+					system = id
+				end
 			end
 			
 			@@god_lock.synchronize {
@@ -259,6 +266,9 @@ module AutomateEm
 		# The system is ready to go
 		#
 		def start
+			@@god_lock.synchronize {
+				@@controllers[@controller.id] = self
+			}
 			@communicator.start
 		end
 		

@@ -21,15 +21,17 @@ module AutomateEm
 		
 		def []= (status, data)
 			status = status.to_sym if status.class == String
-			old_data = check_for_emit(status, data)
 			
-			if data != old_data
-				changed								# so that the notify is applied
-				logger.debug "#{self.class} status updated: #{status} = #{data}"
-			end
-			
-			
-			notify_observers(self, status, data)	# only notify changes
+			@status_lock.mon_synchronize {
+				old_data = check_for_emit(status, data)
+				
+				if data != old_data
+					changed								# so that the notify is applied
+					logger.debug "#{self.class} status updated: #{status} = #{data}"
+				end
+				
+				notify_observers(self, status, data)	# only notify changes
+			}
 		end
 		
 		attr_reader :status	# Should not be accessed like this for modification
