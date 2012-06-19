@@ -133,6 +133,12 @@ module AutomateEm
 							#
 							# TODO:: we need a class for handling failed starts
 							#
+							AutomateEm.print_error(AutomateEm::System.logger, e, {
+								:message => "System #{controller.name} failed to start (gracefully). It is now offline",
+								:level => Logger::WARN
+							})
+							controller.active = false
+							controller.save
 							@@scheduler.in '5m' do
 								System.start(controller, Rails.configuration.automate.log_level)
 							end

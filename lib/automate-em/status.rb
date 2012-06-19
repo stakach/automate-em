@@ -4,19 +4,11 @@ module AutomateEm
 		include Observable
 
 
-		def [] (status, &block)
+		def [] (status)
 			status = status.to_sym if status.class == String
-			if block.nil?
-				@status_lock.mon_synchronize {
-					return @status[status]
-				}
-			else
-				@status_lock.mon_synchronize {
-					newValue = block.call(@status[status].clone)
-					self[status] = newValue
-					return @status[status]
-				}
-			end
+			@status_lock.mon_synchronize {
+				return @status[status]
+			}
 		end
 		
 		def []= (status, data)
@@ -31,6 +23,17 @@ module AutomateEm
 				end
 				
 				notify_observers(self, status, data)	# only notify changes
+			}
+		end
+		
+		def update_status(stat, &block)
+			status = status.to_sym if status.class == String
+			@status_lock.mon_synchronize {
+				data = @status[status]
+				data = data.clone unless data.nil?
+				newValue = block.call(data)
+				self[status] = newValue
+				return @status[status]
 			}
 		end
 		
