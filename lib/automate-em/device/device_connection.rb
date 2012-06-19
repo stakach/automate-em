@@ -30,6 +30,8 @@ module AutomateEm
 				:flush_buffer_on_disconnect => false,
 				:priority_bonus => 20,
 				:inactivity_timeout => 0	# part of make and break options
+				# :response_length			# an alternative to response_delimiter (lower priority)
+				# :response_delimiter		# here instead of a function call
 			}
 			
 			
@@ -252,10 +254,10 @@ module AutomateEm
 		def do_receive_data(data)
 			@last_recieve_at = Time.now.to_f
 			
-			if @parent.respond_to?(:response_delimiter)
-				begin
+			begin
+				if @config[:response_delimiter].present?
 					if @buf.nil?
-						del = @parent.response_delimiter
+						del = @config[:response_delimiter]
 						if del.class == Array
 							del = array_to_str(del)
 						elsif del.class == Fixnum
@@ -264,17 +266,26 @@ module AutomateEm
 						@buf = BufferedTokenizer.new(del, @config[:max_buffer])    # Call back for character
 					end
 					data = @buf.extract(data)
-				rescue => e
-					@buf = nil	# clear the buffer
-					EM.defer do # Error in a thread
-						AutomateEm.print_error(logger, e, {
-							:message => "module #{@parent.class} error whilst setting delimiter",
-							:level => Logger::ERROR
-						})
+				elsif @config[:response_length].present?
+					(@buf ||= "") << data
+					data = @buf.scan(/.{1,#{@config[:response_length]}}/)
+					if data[-1].length == @config[:response_length]
+						@buf = nil
+					else
+						@buf = data[-1]
+						data = data[0..-2]
 					end
+				else
 					data = [data]
 				end
-			else
+			rescue => e
+				@buf = nil	# clear the buffer
+				EM.defer do # Error in a thread
+					AutomateEm.print_error(logger, e, {
+						:message => "module #{@parent.class} error whilst setting delimiter",
+						:level => Logger::ERROR
+					})
+				end
 				data = [data]
 			end
 			
