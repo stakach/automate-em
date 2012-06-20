@@ -26,7 +26,7 @@ module AutomateEm
 			}
 		end
 		
-		def update_status(stat, &block)
+		def update_status(status, &block)
 			status = status.to_sym if status.class == String
 			@status_lock.mon_synchronize {
 				data = @status[status]
