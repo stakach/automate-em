@@ -495,7 +495,7 @@ module AutomateEm
 				#
 				# Make sure we are sending appropriately formatted data
 				#
-				if data.class == Array
+				if data.is_a?(Array)
 					data = array_to_str(data)
 				elsif options[:hex_string] == true
 					data = hex_to_byte(data)

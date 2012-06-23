@@ -37,16 +37,9 @@ module AutomateEm
 				@@load_lock.synchronize {
 					@@modules[dep.id] = dep.classname.constantize	# this is the return value
 				}
-			rescue LoadError => e	# load error explicitly handled
+			rescue Exception => e
 				AutomateEm.print_error(System.logger, e, {
-					:message => "device module #{dep.actual_name} error whilst loading",
-					:level => Logger::ERROR
-				})
-				
-				return false
-			rescue => e
-				AutomateEm.print_error(System.logger, e, {
-					:message => "device module #{dep.actual_name} error.",
+					:message => "device module #{dep.actual_name} error whilst loading.",
 					:level => Logger::ERROR
 				})
 				
