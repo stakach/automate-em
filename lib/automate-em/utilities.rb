@@ -23,24 +23,22 @@ module AutomateEm
 		def initialize(jobs, index, lock)
 			@jobs = jobs
 			@index = index
+			@lock = lock
 			@job = @jobs[@index]	# only ever called from within the lock
 		end
 		
 		
 		def unschedule
-			EM.schedule do
-				begin
-					@job.unschedule
-					@jobs.delete(@index)
-				rescue
-				end
+			@lock.synchronize do
+				@job.unschedule
+				@jobs.delete(@index)
 			end
 		end
 		
 		protected
 		
 		def method_missing(name, *args, &block)
-			EM.schedule do
+			@lock.synchronize do
 				@job.send(name, *args, &block)
 			end
 		end
@@ -53,10 +51,11 @@ module AutomateEm
 		def initialize
 			@jobs = {}
 			@index = 0
+			@job_lock = Mutex.new
 		end
 		
 		def clear_jobs
-			EM.schedule do
+			@job_lock.synchronize do
 				@jobs.each_value do |job|
 					job.unschedule
 				end
@@ -69,49 +68,46 @@ module AutomateEm
 		protected
 		
 		def method_missing(name, *args, &block)
-			EM.schedule do
-				begin
-					if block.present?
-						job = nil
+			@job_lock.synchronize do
+				if block.present?
+					job = nil
+					
+					if [:in, :at].include?(name)
+						index = @index				# local variable for the block
 						
-						if [:in, :at].include?(name)
-							index = @index				# local variable for the block
-							
-							job = AutomateEm::scheduler.send(name, *args) do
-								begin
-									block.call
-								rescue => e
-									AutomateEm.print_error(System.logger, e, :message => "Error in one off scheduled event")
-								ensure
-									EM.schedule do
-										@jobs.delete(index)
-									end
-								end
-							end
-						else
-							job = AutomateEm::scheduler.send(name, *args) do
-								begin
-									block.call
-								rescue => e
-									AutomateEm.print_error(System.logger, e, :message => "Error in repeated scheduled event")
+						job = AutomateEm::scheduler.send(name, *args) do
+							begin
+								block.call
+							rescue => e
+								AutomateEm.print_error(System.logger, e, :message => "Error in one off scheduled event")
+							ensure
+								@job_lock.synchronize do
+									@jobs.delete(index)
 								end
 							end
 						end
-						
-						if job.present?
-							@jobs[@index] = job
-							job = JobProxy.new(@jobs, @index, @job_lock)
-							
-							@index += 1
-							
-							return job
-						end
-						
-						return nil
 					else
-						AutomateEm::scheduler.send(name, *args, &block)
+						job = AutomateEm::scheduler.send(name, *args) do
+							begin
+								block.call
+							rescue => e
+								AutomateEm.print_error(System.logger, e, :message => "Error in repeated scheduled event")
+							end
+						end
 					end
-				rescue
+					
+					if job.present?
+						@jobs[@index] = job
+						job = JobProxy.new(@jobs, @index, @job_lock)
+						
+						@index += 1
+						
+						return job
+					end
+					
+					return nil
+				else
+					AutomateEm::scheduler.send(name, *args, &block)
 				end
 			end
         end
