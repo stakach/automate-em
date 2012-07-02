@@ -50,7 +50,7 @@ module AutomateEm
 
 	#
 	# TODO:: Consider allowing different dependancies use the same connection
-	# 	Means only the first will call received - others must use recieve blocks
+	# 	Means only the first will call received - others must use receive blocks
 	#
 	class DeviceModule
 		@@instances = {}	# db id => @instance

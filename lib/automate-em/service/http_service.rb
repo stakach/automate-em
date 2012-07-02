@@ -50,7 +50,7 @@ module AutomateEm
 			@default_request_options = {
 				:wait => true,			# Wait for response
 				:delay => 0,			# Delay next request by x.y seconds
-				:delay_on_recieve => 0,	# Delay next request after a recieve by x.y seconds (only works when we are waiting for responses)
+				:delay_on_receive => 0,	# Delay next request after a receive by x.y seconds (only works when we are waiting for responses)
 				#:emit
 				:retries => 2,
 				:priority => 50,
@@ -104,7 +104,7 @@ module AutomateEm
 			# State
 			#
 			@last_sent_at = 0.0
-			@last_recieve_at = 0.0
+			@last_receive_at = 0.0
 			
 			
 			#
@@ -371,7 +371,7 @@ module AutomateEm
 		
 		
 		#
-		# Caled from recieve
+		# Caled from receive
 		#
 		def process_response(response, command)
 			EM.defer do
@@ -427,8 +427,8 @@ module AutomateEm
 			
 			#else    result == :abort || result == :success || result == true || waits and retries exceeded
 			
-			if command[:delay_on_recieve] > 0.0
-				delay_for = (@last_recieve_at + command[:delay_on_recieve] - Time.now.to_f)
+			if command[:delay_on_receive] > 0.0
+				delay_for = (@last_receive_at + command[:delay_on_receive] - Time.now.to_f)
 				
 				if delay_for > 0.0
 					EM.add_timer delay_for do

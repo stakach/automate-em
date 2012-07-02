@@ -76,7 +76,7 @@ module AutomateEm
 				if @emit_hasnt_occured.present?
 					begin
 						if @emit_hasnt_occured.has_key?(status)
-							@base.received_lock.mon_exit				# check we are in the recieved queue
+							@base.received_lock.mon_exit				# check we are in the received queue
 							@base.received_lock.mon_enter
 						
 							block = @emit_hasnt_occured.delete(status)

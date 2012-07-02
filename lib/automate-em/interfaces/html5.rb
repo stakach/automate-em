@@ -209,7 +209,7 @@ class HTML5Monitor
 				if command.length == 2
 					@system.send_command(command[0], command[1], *data[:data])
 				else
-					AutomateEm::System.logger.info "-- in html5.rb, recieve : invalid command received - #{data[:command]} --"
+					AutomateEm::System.logger.info "-- in html5.rb, receive : invalid command received - #{data[:command]} --"
 				end
 			end
 		}
@@ -219,7 +219,7 @@ class HTML5Monitor
 			logger = @system.nil? ? AutomateEm::System.logger : @system.logger
 		}
 		AutomateEm.print_error(logger, e, {
-			:message => "in html5.rb, recieve : probably malformed JSON data",
+			:message => "in html5.rb, receive : probably malformed JSON data",
 			:level => Logger::ERROR
 		})
 		shutdown

@@ -83,7 +83,7 @@ var AutomateEm = {
 		this.send = send;
 
 		//
-		// Requests to recieve notifications of a value change from the server
+		// Requests to receive notifications of a value change from the server
 		//	Triggers the functions passed in when the server informs us of an update
 		//
 		this.bind = function (events, func) {

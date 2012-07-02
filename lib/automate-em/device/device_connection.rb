@@ -12,7 +12,7 @@ module AutomateEm
 			@default_send_options = {
 				:wait => true,			# Wait for response
 				:delay => 0,			# Delay next send by x.y seconds
-				:delay_on_recieve => 0,	# Delay next send after a recieve by x.y seconds (only works when we are waiting for responses)
+				:delay_on_receive => 0,	# Delay next send after a receive by x.y seconds (only works when we are waiting for responses)
 				#:emit
 				:max_waits => 3,
 				:callback => nil,		# Alternative to the received function
@@ -70,7 +70,7 @@ module AutomateEm
 			@waiting = false
 			@processing = false
 			@last_sent_at = 0.0
-			@last_recieve_at = 0.0
+			@last_receive_at = 0.0
 			@timeout = nil
 			
 			
@@ -252,7 +252,7 @@ module AutomateEm
 		#	NOTE: The buffer cannot be defered otherwise there are concurrency issues 
 		#
 		def do_receive_data(data)
-			@last_recieve_at = Time.now.to_f
+			@last_receive_at = Time.now.to_f
 			
 			begin
 				if @config[:response_delimiter].present?
@@ -433,8 +433,8 @@ module AutomateEm
 				@processing = false
 				@waiting = false
 				
-				if @command[:delay_on_recieve] > 0.0
-					delay_for = (@last_recieve_at + @command[:delay_on_recieve] - Time.now.to_f)
+				if @command[:delay_on_receive] > 0.0
+					delay_for = (@last_receive_at + @command[:delay_on_receive] - Time.now.to_f)
 					
 					if delay_for > 0.0
 						EM.add_timer delay_for do
