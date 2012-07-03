@@ -24,8 +24,8 @@ h2. Generating module scaffolding
 From a console
 
 # type: @rails g module module/scope/and_name@
-#* An example would be: @rails g module NEC/Projectors/NP2000@
-#* This will create a file at @app/modules/nec/projectors/np2000.rb@
+#* An example would be: @rails g module NecCorp/Projectors/Np2000@
+#* This will create a file at @app/modules/nec_corp/projectors/np2000.rb@
 # You will be asked what type of module you would like to generate
 #* Type: @device@ for a generic device module (a raw TCP or UDP protocol including telnet)
 #* Type: @service@ for any module that will be interfacing with a HTTP(S) service
@@ -38,7 +38,7 @@ h2. Writing Modules
 Please see: "writing modules":https://github.com/stakach/automate-em/wiki/writing-modules
 
 
-h2. Database Configuration
+h2. System Configuration
 
 Please see: "system configuration":https://github.com/stakach/automate-em/wiki/system-configuration
 
