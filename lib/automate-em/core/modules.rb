@@ -158,7 +158,7 @@ module AutomateEm
 				if !controllerDevice.udp
 					res = ResolverJob.new(controllerDevice.ip)
 					res.callback {|ip|
-						EM.connect ip, controllerDevice.port, Device::Base, @instance
+						EM.connect ip, controllerDevice.port, Device::Base, @instance, false # controllerDevice.udp
 						loaded.call
 					}
 					res.errback {|error|
@@ -176,7 +176,7 @@ module AutomateEm
 					# => TODO::test!!
 					#	Call connected
 					#
-					devBase = DatagramBase.new(@instance)
+					devBase = DatagramBase.new(@instance, true)
 					$datagramServer.add_device(controllerDevice, devBase)
 					loaded.call
 				end

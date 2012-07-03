@@ -6,8 +6,8 @@ require 'atomic'
 #
 module AutomateEm
 	module DeviceConnection
-		def initialize( parent )
-			super
+		def initialize( parent, udp )
+			#super
 		
 			@default_send_options = {
 				:wait => true,			# Wait for response
@@ -28,8 +28,8 @@ module AutomateEm
 				:max_buffer => 524288,		# 512kb
 				:clear_queue_on_disconnect => false,
 				:flush_buffer_on_disconnect => false,
-				:priority_bonus => 20,
-				:inactivity_timeout => 0	# part of make and break options
+				:priority_bonus => 20
+				# :inactivity_timeout => 0	# part of make and break options
 				# :response_length			# an alternative to response_delimiter (lower priority)
 				# :response_delimiter		# here instead of a function call
 			}
@@ -61,7 +61,7 @@ module AutomateEm
 			#
 			# State
 			#
-			@connected = false
+			@connected = udp
 			@connecting = false
 			@disconnecting = false
 			@com_paused = true
@@ -450,7 +450,7 @@ module AutomateEm
 		end
 		
 		def process_response_complete
-			if (@make_break && @config[:inactivity_timeout] == 0 && @send_queue.empty?) || @command[:force_disconnect]
+			if (@make_break && [nil, 0].include?(@config[:inactivity_timeout]) && @send_queue.empty?) || @command[:force_disconnect]
 				if @connected
 					close_connection_after_writing
 					@disconnecting = true
@@ -608,7 +608,7 @@ module AutomateEm
 			# NOTE:: Same as add parent in device module!!!
 			#	TODO:: Should break into a module and include it
 			#
-			set_comm_inactivity_timeout(@config[:inactivity_timeout])
+			set_comm_inactivity_timeout(@config[:inactivity_timeout]) unless @config[:inactivity_timeout].nil?
 			@task_queue.push lambda {
 				EM.defer do
 					@parent[:connected] = true

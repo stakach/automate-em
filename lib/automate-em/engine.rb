@@ -15,6 +15,7 @@ module AutomateEm
 			app.config.automate.module_paths = []
 			app.config.automate.log_level = Logger::INFO
 			app.config.automate.encrypt_key = "Lri2B0yvEVag+raqX9uqMFu9LmGoGwbaO8fzNidf"
+			app.config.automate.datagram_port = 0	# ephemeral port (random selection)
 		end
 		
 		#

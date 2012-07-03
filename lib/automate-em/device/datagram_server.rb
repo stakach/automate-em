@@ -9,7 +9,13 @@ module AutomateEm
 		include DeviceConnection
 		
 		def do_send_data(data)
-			$datagramServer.do_send_data(DeviceModule.lookup(@parent), data)
+			EM.defer do
+				$datagramServer.do_send_data(DeviceModule.lookup(@parent), data)
+			end
+		end
+		
+		def error?
+			false
 		end
 	end
 
@@ -26,7 +32,7 @@ module AutomateEm
 			@ips = {}
 			
 			EM.defer do
-				System.logger.info 'running datagram server on an ephemeral port'
+				System.logger.info 'datagram server is now running'
 			end
 		end
 
@@ -39,10 +45,10 @@ module AutomateEm
 			port, ip = Socket.unpack_sockaddr_in(get_peername)
 			begin
 				@devices["#{ip}:#{port}"].do_receive_data(data)
-			rescue
-				#
-				# TODO:: error messages here if device is null ect
-				#
+			rescue => e
+				EM.defer do
+					System.logger.info e.message + "\nDatagram receive failed..."
+				end
 			end
 		end
 		
@@ -62,37 +68,36 @@ module AutomateEm
 				text = "#{scheme.ip}:#{scheme.port}"
 				old_ip = @ips[text]
 				if old_ip != ip
-					EM.schedule do	# All modifications are on the reactor thread instead of locking
-						device = @devices.delete("#{old_ip}:#{scheme.port}")
-						@ips[text] = ip
-						@devices["#{ip}:#{scheme.port}"] = device
-					end
+					device = @devices.delete("#{old_ip}:#{scheme.port}")
+					@ips[text] = ip
+					@devices["#{ip}:#{scheme.port}"] = device
 				end
+				
 				send_datagram(data, ip, scheme.port)
 			}
 			res.errback {|error|
 				EM.defer do
-					System.logger.info e.message + " calling UDP send for #{scheme.dependency.actual_name} @ #{scheme.ip} in #{scheme.control_system.name}"
+					System.logger.info error.message + " calling UDP send for #{scheme.dependency.actual_name} @ #{scheme.ip} in #{scheme.control_system.name}"
 				end
 			}
 		end
 
 		def add_device(scheme, device)
-			EM.schedule do
-				res = ResolverJob.new(scheme.ip)
-				res.callback {|ip|
-					@devices["#{ip}:#{scheme.port}"] = device
-					@ips["#{scheme.ip}:#{scheme.port}"] = ip
-				}
-				res.errback {|error|
-					@devices["#{scheme.ip}:#{scheme.port}"] = device
-					@ips["#{scheme.ip}:#{scheme.port}"] = scheme.ip
-				}
+
+			res = ResolverJob.new(scheme.ip)
+			res.callback {|ip|
+				@devices["#{ip}:#{scheme.port}"] = device
+				@ips["#{scheme.ip}:#{scheme.port}"] = ip
+			}
+			res.errback {|error|
+				@devices["#{scheme.ip}:#{scheme.port}"] = device
+				@ips["#{scheme.ip}:#{scheme.port}"] = scheme.ip
 				
 				EM.defer do
-					System.logger.info e.message + " adding UDP #{scheme.dependency.actual_name} @ #{scheme.ip} in #{scheme.control_system.name}"
+					System.logger.info error.message + " adding UDP #{scheme.dependency.actual_name} @ #{scheme.ip} in #{scheme.control_system.name}"
 				end
-			end
+			}
+
 		end
 		
 		def remove_device(scheme)
@@ -100,7 +105,7 @@ module AutomateEm
 				begin
 					ip = @ips.delete("#{scheme.ip}:#{scheme.port}")
 					@devices.delete("#{ip}:#{scheme.port}")
-				rescue
+				rescue => e
 					EM.defer do
 						System.logger.info e.message + " removing UDP #{scheme.dependency.actual_name} @ #{scheme.ip} in #{scheme.control_system.name}"
 					end

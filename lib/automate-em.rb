@@ -118,7 +118,7 @@ module AutomateEm
 			#
 			# Start the UDP server
 			#
-			EM.open_datagram_socket "0.0.0.0", 0, DatagramServer
+			EM.open_datagram_socket "0.0.0.0", Rails.configuration.automate.datagram_port, DatagramServer
 			
 			#
 			# Load the system based on the database
