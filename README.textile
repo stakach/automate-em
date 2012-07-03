@@ -31,7 +31,7 @@ From a console
 #* Type: @service@ for any module that will be interfacing with a HTTP(S) service
 #* Type: @logic@ to generate a controller/interfacing module
 
-Note: The scope (@NEC/Projectors@ in the example above) is optional and can be as deep or shallow as makes sense.
+Note: The name space (@NecCorp/Projectors@ in the example above) is optional and can be as deep or shallow as makes sense.
 
 h2. Writing Modules
 
