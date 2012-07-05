@@ -10,6 +10,9 @@ module AutomateEm
 		#
 		def setbase(base)
 			@base = base
+			class << self
+				undef setbase
+			end
 		end
 		
 		
