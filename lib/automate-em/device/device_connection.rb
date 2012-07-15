@@ -122,9 +122,9 @@ module AutomateEm
 			# Module loaded
 			#
 			@task_queue.push lambda {
-				if parent.respond_to?(:on_load)
+				if @parent.respond_to?(:on_load)
 					begin
-						parent.on_load
+						@parent.on_load
 					rescue => e
 						AutomateEm.print_error(logger, e, {
 							:message => "device module #{@instance.class} error whilst calling: on_load",
@@ -274,9 +274,9 @@ module AutomateEm
 			@last_receive_at = Time.now.to_f
 			
 			begin
-				if @config[:response_delimiter].present?
+				if @config[:response_delimiter].present? || @parent.respond_to?(:response_delimiter)
 					if @buf.nil?
-						del = @config[:response_delimiter]
+						del = @config[:response_delimiter] || @parent.response_delimiter
 						if del.class == Array
 							del = array_to_str(del)
 						elsif del.class == Fixnum
