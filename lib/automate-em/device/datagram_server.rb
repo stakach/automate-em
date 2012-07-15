@@ -17,6 +17,10 @@ module AutomateEm
 		def error?
 			false
 		end
+		
+		def close_connection
+			# do nothing as UDP
+		end
 	end
 
 	module DatagramServer
