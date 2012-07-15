@@ -23,7 +23,7 @@ h2. Generating module scaffolding
 
 From a console
 
-# type: @rails g module module/scope/and_name@
+# type: @rails g module Module/Scope/AndName@
 #* An example would be: @rails g module NecCorp/Projectors/Np2000@
 #* This will create a file at @app/modules/nec_corp/projectors/np2000.rb@
 # You will be asked what type of module you would like to generate
