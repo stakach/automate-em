@@ -132,41 +132,16 @@ module AutomateEm
 				
 				devBase = nil
 				
-				loaded = Proc.new {
-					EM.defer do
-						if @instance.respond_to?(:on_load)
-							begin
-								@instance.on_load
-							rescue => e
-								AutomateEm.print_error(System.logger, e, {
-									:message => "device module #{@instance.class} error whilst calling: on_load",
-									:level => Logger::ERROR
-								})
-							ensure
-								ActiveRecord::Base.clear_active_connections!
-							end
-						end
-						
-						if controllerDevice.udp
-							EM.schedule do
-								devBase.call_connected	# UDP is stateless (always connected)
-							end
-						end
-					end
-				}
-					
 				if !controllerDevice.udp
 					res = ResolverJob.new(controllerDevice.ip)
 					res.callback {|ip|
 						EM.connect ip, controllerDevice.port, Device::Base, @instance, false # controllerDevice.udp
-						loaded.call
 					}
 					res.errback {|error|
 						EM.defer do
 							System.logger.info error.message + " connecting to #{controllerDevice.dependency.actual_name} @ #{controllerDevice.ip} in #{controllerDevice.control_system.name}"
 						end
 						EM.connect "127.0.0.1", 10, Device::Base, @instance, false	# Connect to a nothing port until the device name is found or updated
-						loaded.call
 					}
 				else
 					#
@@ -178,7 +153,9 @@ module AutomateEm
 					#
 					devBase = DatagramBase.new(@instance, true)
 					$datagramServer.add_device(controllerDevice, devBase)
-					loaded.call
+					EM.schedule do
+						devBase.call_connected	# UDP is stateless (always connected)
+					end
 				end
 					
 					#@@devices[baselookup] = Modules.loading	# set in device_connection (see todo above)

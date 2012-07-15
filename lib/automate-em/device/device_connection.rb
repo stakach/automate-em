@@ -119,6 +119,25 @@ module AutomateEm
 			
 			
 			#
+			# Module loaded
+			#
+			@task_queue.push lambda {
+				if parent.respond_to?(:on_load)
+					begin
+						parent.on_load
+					rescue => e
+						AutomateEm.print_error(logger, e, {
+							:message => "device module #{@instance.class} error whilst calling: on_load",
+							:level => Logger::ERROR
+						})
+					ensure
+						ActiveRecord::Base.clear_active_connections!
+					end
+				end
+			}
+			
+			
+			#
 			# send loop
 			#
 			@wait_queue_proc = Proc.new do |ignore|
@@ -610,38 +629,36 @@ module AutomateEm
 			#
 			set_comm_inactivity_timeout(@config[:inactivity_timeout]) unless @config[:inactivity_timeout].nil?
 			@task_queue.push lambda {
-				EM.defer do
-					@parent[:connected] = true
-					
-					begin
-						@send_monitor.mon_synchronize { # Any sends in here are high priority (no emits as this function must return)
-							@parent.connected(*args) if @parent.respond_to?(:connected)
-						}
-					rescue => e
+				@parent[:connected] = true
+				
+				begin
+					@send_monitor.mon_synchronize { # Any sends in here are high priority (no emits as this function must return)
+						@parent.connected(*args) if @parent.respond_to?(:connected)
+					}
+				rescue => e
+					#
+					# save from bad user code (don't want to deplete thread pool)
+					#
+					AutomateEm.print_error(logger, e, {
+						:message => "module #{@parent.class} error whilst calling: connect",
+						:level => Logger::ERROR
+					})
+				ensure
+					EM.schedule do
 						#
-						# save from bad user code (don't want to deplete thread pool)
+						# First connect if no commands pushed then we disconnect asap
 						#
-						AutomateEm.print_error(logger, e, {
-							:message => "module #{@parent.class} error whilst calling: connect",
-							:level => Logger::ERROR
-						})
-					ensure
-						EM.schedule do
-							#
-							# First connect if no commands pushed then we disconnect asap
-							#
-							if @make_break && @first_connect && @send_queue.size == 0
-								close_connection_after_writing
-								@disconnecting = true
-								@com_paused = true
-								@first_connect = false
-							elsif @com_paused
-								@com_paused = false
-								@wait_queue.push(nil)
-							else
-								EM.defer do
-									logger.info "Reconnected, communications not paused."
-								end
+						if @make_break && @first_connect && @send_queue.size == 0
+							close_connection_after_writing
+							@disconnecting = true
+							@com_paused = true
+							@first_connect = false
+						elsif @com_paused
+							@com_paused = false
+							@wait_queue.push(nil)
+						else
+							EM.defer do
+								logger.info "Reconnected, communications not paused."
 							end
 						end
 					end
