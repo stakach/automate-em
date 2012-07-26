@@ -7,8 +7,10 @@ module AutomateEm
 			level = options[:level] || Logger::INFO
 			logger.add(level) do
 				message = options[:message].nil? ? "" : "%p" % options[:message]
-				message += "\n#{e.message}"
-				e.backtrace.each {|line| message += "\n#{line}"}
+				if !e.nil?
+					message += "\n#{e.message}"
+					e.backtrace.each {|line| message += "\n#{line}"}
+				end
 				message
 			end
 		rescue
