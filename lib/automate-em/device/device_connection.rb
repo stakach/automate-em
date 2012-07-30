@@ -31,7 +31,6 @@ module AutomateEm
 				:priority_bonus => 20
 				# :inactivity_timeout => 0	# part of make and break options
 				# :response_length			# an alternative to response_delimiter (lower priority)
-				# :response_delimiter		# here instead of a function call
 			}
 			
 			
@@ -274,9 +273,9 @@ module AutomateEm
 			@last_receive_at = Time.now.to_f
 			
 			begin
-				if @config[:response_delimiter].present? || @parent.respond_to?(:response_delimiter)
+				if @parent.respond_to?(:response_delimiter)
 					if @buf.nil?
-						del = @config[:response_delimiter] || @parent.response_delimiter
+						del = @parent.response_delimiter
 						if del.class == Array
 							del = array_to_str(del)
 						elsif del.class == Fixnum
