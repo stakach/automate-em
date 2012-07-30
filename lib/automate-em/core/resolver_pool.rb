@@ -2,7 +2,7 @@ module AutomateEm
 	
 	class ResolverPool
 		
-		def initialize(size = 30)
+		def initialize(size = 15)
 			
 			@size = size
 			@jobs = Queue.new
