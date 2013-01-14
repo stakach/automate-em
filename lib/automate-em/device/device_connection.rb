@@ -312,7 +312,7 @@ module AutomateEm
 					@receive_queue.push(*data)
 				else
 					@processing = true
-					@timeout.cancel
+					@timeout.cancel if @timeout.respond_to? :cancel
 					process_response(data.shift, @command)
 					if data.length > 0
 						@receive_queue.push(*data)
