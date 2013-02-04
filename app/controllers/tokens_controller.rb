@@ -3,6 +3,9 @@ require 'uri'
 class TokensController < ActionController::Base
 	
 	protect_from_forgery
+	skip_before_filter :verify_authenticity_token, :only => [:options]	# do not use CSRF for CORS options
+	before_filter :cors_set_access_control_headers
+	
 	before_filter :auth_user, :only => [:accept]
 	layout nil
 
@@ -87,9 +90,22 @@ class TokensController < ActionController::Base
 	def servers
 		render :json => Server.where(:online => true).all
 	end
+	
+	
+	def options 
+		render :text => '', :content_type => 'text/plain'
+	end
 
 
 	protected
+	
+
+	def cors_set_access_control_headers
+		headers['Access-Control-Allow-Origin'] = '*'
+		headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT, DELETE, OPTIONS'
+		headers['Access-Control-Allow-Headers'] = '*, X-Requested-With, X-Prototype-Version, X-CSRF-Token, Content-Type'
+		headers['Access-Control-Max-Age'] = "1728000"
+	end
 
 
 	def auth_user

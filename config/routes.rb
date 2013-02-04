@@ -8,5 +8,7 @@ Rails.application.routes.draw do
 		post	:accept,		:on => :collection
 		get		:servers,		:on => :collection
 	end
+	
+	match '/*path' => 'tokens#options', :via => :options
 
 end
