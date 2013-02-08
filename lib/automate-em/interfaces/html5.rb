@@ -118,13 +118,21 @@ class HTML5Monitor
 			@ignoreAuth = true
 			EM.add_timer(2) do
 				begin
-					@socket.send(JSON.generate({:event => "authenticate", :data => []}))
+					do_send_authenticate
 				ensure
 					@ignoreAuth = false
 				end
 			end
 		end
 		return false
+	end
+
+	def do_send_authenticate
+		begin
+			@socket.send(JSON.generate({:event => "authenticate", :data => []}))
+		ensure
+			@ignoreAuth = false
+		end
 	end
 	
 	def send_system
@@ -133,10 +141,18 @@ class HTML5Monitor
 		
 		EM.add_timer(2) do
 			begin
-				@socket.send(JSON.generate({:event => "system", :data => []}))
+				do_send_system
 			ensure
 				@ignoreSys = false
 			end
+		end
+	end
+
+	def do_send_system
+		begin
+			@socket.send(JSON.generate({:event => "system", :data => []}))
+		ensure
+			@ignoreSys = false
 		end
 	end
 	

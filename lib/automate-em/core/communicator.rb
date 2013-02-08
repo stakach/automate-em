@@ -161,8 +161,10 @@ class Communicator
 					
 					if interface.respond_to?(function)
 						interface.__send__(function, theVal)
-					else
+					elsif interface.respond_to?(:notify)
 						interface.notify(mod_sym, status, theVal)
+					else
+						logger.warn "!!! Event registration failed !!! for #{function}"
 					end
 				rescue => e
 					AutomateEm.print_error(logger, e, {
@@ -242,8 +244,10 @@ class Communicator
 						function = "#{mod.to_s.downcase}_#{status}_changed".to_sym
 						if interface.respond_to?(function)				# Can provide a function to deal with status updates
 							interface.__send__(function, data)
-						else
+						elsif interface.respond_to?(:notify)
 							interface.notify(modinner, status, data)
+						else
+							logger.warn "!!! Event send failed !!! for #{function}"
 						end
 					rescue => e
 						AutomateEm.print_error(logger, e, {

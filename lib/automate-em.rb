@@ -52,6 +52,19 @@ require 'automate-em/logic/logic.rb'
 require 'automate-em/interfaces/html5.rb'
 
 
+require 'models/control_system.rb'
+require 'models/controller_device.rb'
+require 'models/controller_http_service.rb'
+require 'models/controller_logic.rb'
+require 'models/controller_zone.rb'
+require 'models/dependency.rb'
+require 'models/server.rb'
+require 'models/setting.rb'
+require 'models/trusted_device.rb'
+require 'models/user_zone.rb'
+require 'models/zone.rb'
+
+
 module AutomateEm
 	
 	

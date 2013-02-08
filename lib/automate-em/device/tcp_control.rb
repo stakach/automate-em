@@ -168,7 +168,7 @@ module AutomateEm
 				
 								do_reconnect(settings)
 							end
-						rescue
+						rescue => e
 							AutomateEm.print_error(logger, e, {
 								:message => "module #{@parent.class} in tcp_control.rb, unbind\nFailed to lookup settings. Device probably going offline.",
 								:level => Logger::FATAL
