@@ -76,7 +76,7 @@ class HTML5Monitor
 		
 		
 		@socket.send(JSON.generate({:event => "authenticate", :data => []}))
-		
+	rescue
 		#
 		# TODO:: start a schedule here that sends a ping to the browser every so often
 		#
@@ -130,6 +130,7 @@ class HTML5Monitor
 	def do_send_authenticate
 		begin
 			@socket.send(JSON.generate({:event => "authenticate", :data => []}))
+		rescue
 		ensure
 			@ignoreAuth = false
 		end
@@ -151,6 +152,7 @@ class HTML5Monitor
 	def do_send_system
 		begin
 			@socket.send(JSON.generate({:event => "system", :data => []}))
+		rescue
 		ensure
 			@ignoreSys = false
 		end
@@ -243,7 +245,10 @@ class HTML5Monitor
 	
 	def shutdown
 		EM.schedule do
-			@socket.close_websocket
+			begin
+				@socket.close_websocket
+			rescue
+			end
 		end
 	end
 	
@@ -253,7 +258,10 @@ class HTML5Monitor
 		#
 		@system.logger.debug "#{mod_sym}.#{stat_sym} sent #{data.inspect}"
 		EM.schedule do
-			@socket.send(JSON.generate({"event" => "#{mod_sym}.#{stat_sym}", "data" => data}))
+			begin
+				@socket.send(JSON.generate({"event" => "#{mod_sym}.#{stat_sym}", "data" => data}))
+			rescue
+			end
 		end
 	end
 end
