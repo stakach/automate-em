@@ -11,8 +11,8 @@ require 'observer'
 require 'yaml'
 require 'thread'
 require 'monitor'
-require 'Socket'	# for DNS lookups 
-require 'Logger'
+require 'socket'	# for DNS lookups 
+require 'logger'
 
 
 #
