@@ -241,7 +241,7 @@ class Communicator
 			@status_register[mod][status].each_pair do |interface, modinner|
 				EM.defer do	# to avoid deadlock
 					begin
-						function = "#{mod.to_s.downcase}_#{status}_changed".to_sym
+						function = "#{modinner.to_s.downcase}_#{status}_changed".to_sym
 						if interface.respond_to?(function)				# Can provide a function to deal with status updates
 							interface.__send__(function, data)
 						elsif interface.respond_to?(:notify)
