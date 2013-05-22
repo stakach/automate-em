@@ -40,7 +40,7 @@ module AutomateEm
 			@task_queue = EM::Queue.new		# basically we add tasks here that we want to run in a strict order (connect, disconnect)
 			@receive_queue = EM::Queue.new	# So we can process responses in different ways
 			@wait_queue = EM::Queue.new
-			@send_queue = EM::PriorityQueue.new(:fifo => true) {|x,y| x < y} # regular priority
+			@send_queue = EM::PriorityQueue.new(:fifo => true) {|x,y| (x || 50) < (y || 50)} # regular priority
 			
 			#
 			# Named commands
@@ -573,6 +573,7 @@ module AutomateEm
 		
 		def add_to_queue(command)
 			begin
+				command[:priority] = 50 unless command[:priority].is_a? Fixnum
 				if @connected || @make_break
 					if @com_paused && !@make_break									# We are calling from connected function (and we are connected)
 						command[:priority] -=  (2 * @config[:priority_bonus])		# Double bonus
