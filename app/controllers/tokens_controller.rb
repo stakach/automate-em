@@ -3,9 +3,9 @@ require 'uri'
 class TokensController < ActionController::Base
 	
 	protect_from_forgery
-	skip_before_filter :verify_authenticity_token, :only => [:options]	# do not use CSRF for CORS options
+	skip_before_filter :verify_authenticity_token, :only => :options	# do not use CSRF for CORS options
 	before_filter :cors_set_access_control_headers
-	after_filter  :set_csrf_cookie_for_ng
+	after_filter  :set_csrf_cookie_for_ng, :except => :options
 	
 	before_filter :auth_user, :only => [:accept]
 	layout nil
