@@ -1,5 +1,14 @@
 require 'uri'
 
+
+class ActionController::Base
+	alias_method :old_verify, :verified_request?
+	def verified_request?
+		old_verify || form_authenticity_token == request.headers['X_XSRF_TOKEN']
+	end
+end
+
+
 class TokensController < ActionController::Base
 	
 	protect_from_forgery
@@ -110,10 +119,6 @@ class TokensController < ActionController::Base
 
 	def set_csrf_cookie_for_ng
 		cookies['XSRF-TOKEN'] = form_authenticity_token if protect_against_forgery?
-	end
-
-	def verified_request?
-		super || form_authenticity_token == request.headers['X_XSRF_TOKEN']
 	end
 
 
