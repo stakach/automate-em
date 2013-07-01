@@ -3,18 +3,34 @@ require 'uri'
 
 class ActionController::Base
 	alias_method :old_verify, :verified_request?
+	
+	protected
+	
 	def verified_request?
 		old_verify || form_authenticity_token == request.headers['X_XSRF_TOKEN']
 	end
+	
+	def cors_set_access_control_headers
+		headers['Access-Control-Allow-Origin'] = '*'
+		headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT, DELETE, OPTIONS'
+		headers['Access-Control-Allow-Headers'] = '*, X-Requested-With, X-Prototype-Version, X-CSRF-Token, X_XSRF_TOKEN, Content-Type'
+		headers['Access-Control-Max-Age'] = "1728000"
+	end
+
+	def set_csrf_cookie_for_ng
+		cookies['XSRF-TOKEN'] = form_authenticity_token if protect_against_forgery?
+	end
+	
+	skip_before_filter :verify_authenticity_token, :only => :options	# do not use CSRF for CORS options
+	before_filter :cors_set_access_control_headers
+	after_filter  :set_csrf_cookie_for_ng, :except => :options
 end
 
 
 class TokensController < ActionController::Base
 	
 	protect_from_forgery
-	skip_before_filter :verify_authenticity_token, :only => :options	# do not use CSRF for CORS options
-	before_filter :cors_set_access_control_headers
-	after_filter  :set_csrf_cookie_for_ng, :except => :options
+	
 	
 	before_filter :auth_user, :only => [:accept]
 	layout nil
@@ -110,16 +126,7 @@ class TokensController < ActionController::Base
 	protected
 	
 
-	def cors_set_access_control_headers
-		headers['Access-Control-Allow-Origin'] = '*'
-		headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT, DELETE, OPTIONS'
-		headers['Access-Control-Allow-Headers'] = '*, X-Requested-With, X-Prototype-Version, X-CSRF-Token, X_XSRF_TOKEN, Content-Type'
-		headers['Access-Control-Max-Age'] = "1728000"
-	end
-
-	def set_csrf_cookie_for_ng
-		cookies['XSRF-TOKEN'] = form_authenticity_token if protect_against_forgery?
-	end
+	
 
 
 	def auth_user
