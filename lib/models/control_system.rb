@@ -1,7 +1,7 @@
 class ControlSystem < ActiveRecord::Base
-	has_many :devices, -> {order: 'priority ASC'},	:class_name => "ControllerDevice",	:dependent => :destroy
-	has_many :logics, -> {order: 'priority ASC'},	:class_name => "ControllerLogic",	:dependent => :destroy
-	has_many :services, -> {order: 'priority ASC'},	:class_name => "ControllerHttpService",	:dependent => :destroy
+	has_many :devices, -> {order 'priority ASC'},	:class_name => "ControllerDevice",	:dependent => :destroy
+	has_many :logics, -> {order 'priority ASC'},	:class_name => "ControllerLogic",	:dependent => :destroy
+	has_many :services, -> {order 'priority ASC'},	:class_name => "ControllerHttpService",	:dependent => :destroy
 	
 	has_many :controller_zones,		:dependent => :destroy
 	has_many :zones,				:through => :controller_zones
