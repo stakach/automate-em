@@ -49,7 +49,7 @@ class TokensController < ActionController::Base
 			session[:key] = params[:key]
 			cookies.permanent[:next_key] = {:value => dev.next_key, :path => URI.parse(request.referer).path}
 
-			render :nothing => true	# success!
+			render :json => {:next_key => dev.next_key}	# success!
 		else
 			render :nothing => true, :status => :forbidden	# 403
 		end
