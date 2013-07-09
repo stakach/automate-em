@@ -119,6 +119,7 @@ class HTML5Monitor
 			EM.add_timer(2) do
 				begin
 					do_send_authenticate
+				rescue
 				ensure
 					@ignoreAuth = false
 				end
@@ -200,22 +201,34 @@ class HTML5Monitor
 							send_system
 						elsif @system == false	# System offline
 							EM.schedule do
-								@socket.send(JSON.generate({:event => "offline", :data => []}))
-								shutdown
+								begin
+									@socket.send(JSON.generate({:event => "offline", :data => []}))
+									shutdown
+								rescue
+								end
 							end
 						else
 							EM.schedule do
-								@socket.send(JSON.generate({:event => "ready", :data => []}))
+								begin
+									@socket.send(JSON.generate({:event => "ready", :data => []}))
+								rescue
+								end
 							end
 						end
 					when :ping
 						EM.schedule do
-							@socket.send(JSON.generate({:event => "pong", :data => []}))
+							begin
+								@socket.send(JSON.generate({:event => "pong", :data => []}))
+							rescue
+							end
 						end
 					when :ls
 						systems = AutomateEm::Communicator.system_list(@user)
 						EM.schedule do
-							@socket.send(JSON.generate({:event => "ls", :data => systems}))
+							begin
+								@socket.send(JSON.generate({:event => "ls", :data => systems}))
+							rescue
+							end
 						end
 				end
 			elsif @@special_commands.has_key?(data[:command])	# reg, unreg
@@ -318,8 +331,11 @@ module AutomateEm
 		
 		def self.stop_websockets
 			EM.schedule do
-				EventMachine::stop_server(@@socket_server) unless @@socket_server.nil?
-				@@socket_server = nil
+				begin
+					EventMachine::stop_server(@@socket_server) unless @@socket_server.nil?
+					@@socket_server = nil
+				rescue
+				end
 			end
 		end
 	end
