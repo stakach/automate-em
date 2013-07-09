@@ -87,7 +87,12 @@ class TokensController < ActionController::Base
 		# Ensure the user can access the control system requested (the control system does this too)
 		# Generate key, populate the session
 		#
-		user = session[:user].present? ? User.find(session[:user]) : nil	# We have to be authed to get here
+		user = nil
+		if params[:user].present?
+			user = User.try_to_login(params[:user][:name]], params[:user][:password], AuthSource.where('name = ?', params[:user][:domain]).first)
+		elsif session[:user].present?
+			user = User.find(session[:user]) # We have to be authed to get here
+		end
 		sys = user.control_systems.where('control_systems.id = ?', params[:system]).first unless user.nil?
 		if user.present? && sys.present?
 
@@ -99,7 +104,7 @@ class TokensController < ActionController::Base
 
 			if !dev.new_record?
 				cookies.permanent[:next_key] = {:value => dev.one_time_key, :path => URI.parse(request.referer).path}
-				render :json => {}	# success!
+				render :json => {:next_key => dev.one_time_key}	# success!
 			else
 				render :json => dev.errors.messages, :status => :not_acceptable	# 406
 			end
