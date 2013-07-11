@@ -89,7 +89,7 @@ class TokensController < ActionController::Base
 		#
 		user = nil
 		if params[:user].present?
-			user = User.try_to_login(params[:user][:name]], params[:user][:password], AuthSource.where('name = ?', params[:user][:domain]).first)
+			user = User.try_to_login(params[:user][:name], params[:user][:password], AuthSource.where('name = ?', params[:user][:domain]).first)
 		elsif session[:user].present?
 			user = User.find(session[:user]) # We have to be authed to get here
 		end
