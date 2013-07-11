@@ -29,9 +29,6 @@ end
 
 class TokensController < ActionController::Base
 	
-	protect_from_forgery
-	
-	
 	before_filter :auth_user, :only => [:accept]
 	layout nil
 
