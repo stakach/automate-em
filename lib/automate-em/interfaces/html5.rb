@@ -29,7 +29,7 @@ class HTML5Monitor
 	def self.unregister(id)
 		client = @@clients.delete(id)
 		
-		EM.defer do
+		#EM.defer do
 			begin
 				client.disconnected
 				AutomateEm::System.logger.debug "There are now #{HTML5Monitor.count} HTML5 clients connected"
@@ -39,7 +39,7 @@ class HTML5Monitor
 					:level => Logger::ERROR
 				})
 			end
-		end
+		#end
 	end
 	
 	def self.count
@@ -49,10 +49,10 @@ class HTML5Monitor
 	def self.receive(id, data)
 		client = @@clients[id]
 		
-		EM.defer do
+		#EM.defer do
 			begin
 				client.receive(data)
-			rescue => e
+			rescue Exception => e
 				AutomateEm.print_error(AutomateEm::System.logger, e, {
 					:message => "in html5.rb, onmessage : client did not exist (we may have been shutting down)",
 					:level => Logger::ERROR
@@ -60,7 +60,7 @@ class HTML5Monitor
 			ensure
 				ActiveRecord::Base.clear_active_connections!	# Clear any unused connections
 			end
-		end
+		#end
 	end
 	
 	
