@@ -1,5 +1,4 @@
 
-
 module AutomateEm
 	def self.print_error(logger, e, options = {})
 
@@ -121,10 +120,10 @@ module AutomateEm
 		#
 		def hex_to_byte(data)	# Assumes string - converts to binary string
 			data.gsub!(/(0x|[^0-9A-Fa-f])*/, "")				# Removes invalid characters
-			output = ""
+			output = []
 			data = "0#{data}" if data.length % 2 > 0
 			data.scan(/.{2}/) { |byte| output << byte.hex}	# Breaks string into an array of characters
-			return output
+			return output.pack('c*')
 		end
 		
 		#
